@@ -64,6 +64,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- ADD THIS DEPENDENCY for pretty Cucumber reports -->
+        <dependency>
+            <groupId>net.masterthought</groupId>
+            <artifactId>cucumber-reporting</artifactId>
+            <version>5.7.8</version>
+        </dependency>
+
         <!-- ===== Extent Reports (used in main) ===== -->
         <dependency>
             <groupId>com.aventstack</groupId>

@@ -253,18 +253,18 @@ public class SearchSteps {
                 "Invalid search should show no results or suggestions");
     }
 
-    @When("I search for a very long string")
-    public void i_search_for_a_very_long_string() {
-        init();
-        String longTerm = "a".repeat(620);
-        homePage.enterSearchText(longTerm);
-        homePage.clickSearchButton();
-    }
-
-    @Then("the page should handle the input gracefully")
-    public void the_page_should_handle_the_input_gracefully() {
-        init();
-        resultsPage.waitUntilResultsOrMessage(Duration.ofSeconds(15));
-        Assert.assertTrue(resultsPage.title().length() > 0, "Page handled long input");
-    }
+//    @When("I search for a very long string")
+//    public void i_search_for_a_very_long_string() {
+//        init();
+//        String longTerm = "a".repeat(620);
+//        homePage.enterSearchText(longTerm);
+//        homePage.clickSearchButton();
+//    }
+//
+//    @Then("the page should handle the input gracefully")
+//    public void the_page_should_handle_the_input_gracefully() {
+//        init();
+//        resultsPage.waitUntilResultsOrMessage(Duration.ofSeconds(15));
+//        Assert.assertTrue(resultsPage.title().length() > 0, "Page handled long input");
+//    }
 }

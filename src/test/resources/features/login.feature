@@ -22,9 +22,9 @@ Feature: Login Page Validation
 
   Scenario: Login with invalid email and password
     Given I launch the application
-    When I enter email "wronguser@test.com" and password "WrongPass123"
+    When I enter email "userdoesnotexist@elusive.com" and password "thispassdoestnotexist"
     And I click on login button
-    Then I should see "Invalid credentials" error messagea
+    Then I should see "Invalid credentials" error message
 
  
 

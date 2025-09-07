@@ -5,40 +5,47 @@ import com.aventstack.extentreports.ExtentReports;
 import com.aventstack.extentreports.ExtentTest;
 import com.aventstack.extentreports.MediaEntityBuilder;
 import io.cucumber.java.*;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
-import reporters.ExtentManager;
+import utils.ResultsExcelWriter;
+import utils.ScreenshotUtils;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Hooks {
 
     private static final ThreadLocal<ExtentTest> TEST = new ThreadLocal<>();
     private static ExtentReports extent;
+    private static String RUN_FOLDER;
 
     @BeforeAll
     public static void beforeAll() {
-        // ✅ Start a single browser for the whole test run
+        // Start a single browser for the whole test run
         DriverFactory.getDriver();
 
-        // ✅ Initialize Extent once (don’t fail run if XML is missing)
-        try {
-            extent = ExtentManager.getInstance();
-        } catch (Exception e) {
-            System.err.println("Extent init warning: " + e.getMessage());
-            extent = null;
-        }
+        // Initialize Extent Reports
+        extent = reporters.ExtentManager.getInstance(); // Using the reporters package version
+
+        // Create a unique folder for this test run's screenshots
+        String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
+        RUN_FOLDER = "test-output/screenshots/run_" + ts;
+        ScreenshotUtils.initRunFolder(RUN_FOLDER);
+
+        // Initialize the Excel writer
+        ResultsExcelWriter.init();
     }
 
     @AfterAll
     public static void afterAll() {
-        // ✅ Flush Extent once
-        try {
-            if (extent != null) extent.flush();
-        } catch (Exception e) {
-            System.err.println("Extent flush warning: " + e.getMessage());
+        // Flush the Extent report to write everything to the file
+        if (extent != null) {
+            extent.flush();
         }
 
-        // ✅ Close the browser ONCE after all scenarios
+        // Close the Excel writer
+        ResultsExcelWriter.close();
+
+        // Close the browser ONCE after all scenarios are done
         DriverFactory.quitDriver();
     }
 
@@ -52,29 +59,34 @@ public class Hooks {
     @After
     public void afterScenario(Scenario scenario) {
         WebDriver driver = DriverFactory.getDriver();
-        try {
-            if (extent != null && TEST.get() != null && driver instanceof TakesScreenshot) {
-                byte[] png = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
-                String b64 = java.util.Base64.getEncoder().encodeToString(png);
+        String status = scenario.getStatus().toString();
+        String snapPath = null;
 
+        try {
+            // 1. Take screenshot and save it as a file
+            snapPath = ScreenshotUtils.takeScreenshot(driver, scenario.getName());
+
+            // 2. Attach the FILE path to the Extent Report
+            if (extent != null && TEST.get() != null) {
                 if (scenario.isFailed()) {
                     TEST.get().fail("Scenario failed",
-                            MediaEntityBuilder.createScreenCaptureFromBase64String(b64, scenario.getName()).build());
+                            MediaEntityBuilder.createScreenCaptureFromPath(snapPath).build());
                 } else {
                     TEST.get().pass("Scenario passed",
-                            MediaEntityBuilder.createScreenCaptureFromBase64String(b64, scenario.getName()).build());
+                            MediaEntityBuilder.createScreenCaptureFromPath(snapPath).build());
                 }
-            } else if (extent != null && TEST.get() != null) {
-                if (scenario.isFailed()) TEST.get().fail("Scenario failed");
-                else TEST.get().pass("Scenario passed");
             }
         } catch (Exception e) {
             System.err.println("After scenario reporting warning: " + e.getMessage());
         } finally {
-            TEST.remove();
+            // 3. Log the result to the Excel file
+            try {
+                ResultsExcelWriter.append(scenario.getName(), status, snapPath);
+            } catch (Exception ignored) {
+            }
 
-            // ❌ DO NOT quit the driver here (we want a single window for all scenarios)
-            // Optional isolation between scenarios:
+            // Clean up for the next scenario
+            TEST.remove();
             try {
                 driver.manage().deleteAllCookies();
             } catch (Exception ignored) {
