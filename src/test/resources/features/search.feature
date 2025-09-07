@@ -4,8 +4,8 @@ Feature: Amazon Product Search
   @positive
   Scenario: Valid search using search button
     Given I launch the application
-    When I search for "mosquito hit" using search button
-    Then I should see search results for "mosquito hit"
+    When I search for "mosquito all out" using search button
+    Then I should see search results for "mosquito all out"
 
 
   @positive

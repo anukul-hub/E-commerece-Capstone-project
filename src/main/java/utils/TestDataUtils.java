@@ -13,7 +13,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 public class TestDataUtils {
-    private static final List<String> DEFAULT_PRODUCTS = List.of("mosquito hit", "Mobile", "power bank");
+    private static final List<String> DEFAULT_PRODUCTS = List.of("mosquito all out", "Mobile", "power bank");
 
     public static void createDefaultExcel(Path excelPath) throws IOException {
         try (Workbook wb = new XSSFWorkbook()) {
