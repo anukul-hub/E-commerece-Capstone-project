@@ -263,7 +263,7 @@ public class PaymentPage {
                 for (WebElement el : els) {
                     if (el != null && el.isDisplayed()) {
                         el.clear();
-                        el.sendKeys("1234567890123456");
+                        el.sendKeys("123456");
                         System.out.println("[PaymentPage] filled card number using: " + by);
                         filledCard = true;
                         break;
@@ -286,7 +286,7 @@ public class PaymentPage {
                             for (WebElement el : els) {
                                 if (el != null && el.isDisplayed()) {
                                     el.clear();
-                                    el.sendKeys("1234567890123456");
+                                    el.sendKeys("123456");
                                     System.out.println("[PaymentPage] filled card number inside iframe using: " + by);
                                     filledCard = true;
                                     break;
