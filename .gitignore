@@ -1,0 +1,116 @@
+# Compiled class files
+*.class
+target/
+*.jar
+*.war
+*.ear
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# IDE files
+.idea/
+*.iml
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+*.code-workspace
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Test outputs
+test-output/
+reports/
+logs/
+screenshots/
+*.log
+
+# Browser drivers
+drivers/
+*.exe
+chromedriver
+geckodriver
+edgedriver
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Node modules (if using any npm packages)
+node_modules/
+
+# Environment variables
+.env
+*.env
+config.properties
+
+# Cucumber generated files
+target/cucumber-reports/
+target/site/
+target/generated-sources/
+target/generated-test-sources/
+
+# Allure results
+allure-results/
+allure-report/
+
+# ExtentReports
+extent-reports/
+ExtentReports/
+
+# TestNG
+test-output/
+
+# Screenshots and videos
+screenshots/
+videos/
+recordings/
+
+# Backup files
+*.bak
+*.backup
+
+# Database files
+*.db
+*.sqlite
+
+# Certificate files
+*.p12
+*.jks
+*.keystore
+
+# Application specific
+application-local.properties
+test-local.properties
+
+
+
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### IntelliJ IDEA ###
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/compiler.xml
+.idea/libraries/
+*.iws
+*.iml
+*.ipr
+
+
