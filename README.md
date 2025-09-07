@@ -93,47 +93,25 @@ A robust test automation framework designed to validate the functionality of the
 ## 📂 Project Structure
 
 ```
-amazon-web-automation/
+.
+├── pom.xml                   # Maven Project Object Model
+├── testng.xml                # TestNG suite for test execution
 │
-├── 📄 pom.xml                         # Maven dependencies and plugins
-├── 📄 testng.xml                      # TestNG suite configuration
-│
-└── 📁 src/test/
-    ├── 📁 java/
-    │   ├── 📁 base/                    # 🏗️ Core framework setup
-    │   │   ├── DriverFactory.java     # WebDriver initialization
-    │   │   └── BaseTest.java          # Base test class
-    │   │
-    │   ├── 📁 pages/                   # 📄 Page Object Model classes
-    │   │   ├── HomePage.java          # Amazon home page objects
-    │   │   ├── LoginPage.java         # Login page interactions
-    │   │   ├── SearchPage.java        # Search functionality
-    │   │   └── CheckoutPage.java      # Checkout process
-    │   │
-    │   ├── 📁 runners/                 # 🏃‍♂️ Test execution runners
-    │   │   └── TestRunner.java        # Cucumber-TestNG runner
-    │   │
-    │   ├── 📁 stepDefinitions/         # 🥒 Cucumber step implementations
-    │   │   ├── LoginSteps.java        # Login step definitions
-    │   │   ├── SearchSteps.java       # Search step definitions
-    │   │   └── CheckoutSteps.java     # Checkout step definitions
-    │   │
-    │   └── 📁 utils/                   # 🔧 Helper utilities
-    │       ├── ConfigReader.java      # Configuration file reader
-    │       ├── ScreenshotUtils.java   # Screenshot capture utility
-    │       ├── ExcelUtils.java        # Excel data operations
-    │       └── LoggerUtils.java       # Logging utility
-    │
-    └── 📁 resources/
-        ├── 📁 features/                # 🥒 Cucumber feature files
-        │   ├── login.feature          # Login scenarios
-        │   ├── search.feature         # Search scenarios
-        │   └── checkout.feature       # Checkout scenarios
+└── src
+    └── test
+        ├── java
+        │   ├── base                # Core framework setup (DriverFactory, BaseTest)
+        │   ├── pages               # Page Object Model classes (LoginPage, HomePage, etc.)
+        │   ├── runners             # TestNG Cucumber runner
+        │   ├── stepDefinitions     # Cucumber step definitions (glue code)
+        │   └── utils               # Helper utilities (ConfigReader, ScreenshotUtils, etc.)
         │
-        ├── 📄 config.properties        # ⚙️ Application configuration
-        ├── 📄 log4j2.xml              # 📝 Logging configuration
-        ├── 📄 extent-config.xml       # 📊 Report styling
-        └── 📄 testdata.xlsx           # 📊 Test data for data-driven tests
+        └── resources
+            ├── features            # Cucumber .feature files
+            ├── config.properties   # Main configuration file
+            ├── log4j2.xml          # Logging configuration
+            ├── extent-config.xml   # Extent Reports styling
+            └── testdata.xlsx       # Test data for data-driven tests
 ```
 
 ---
@@ -207,7 +185,7 @@ mvn clean test -Denv=staging -Dbrowser=firefox
 ### 📈 **Extent Reports**
 Rich, interactive HTML reports with detailed execution insights:
 
-- **📍 Location:** `test-output/ExtentReport_Dashboard.html`
+- **📍 Location:** `test-output/ExtentReport_Dashboard.html` and `test-output/ExtentReport_Tests.html`
 - **✨ Features:**
   - Test execution dashboard
   - Step-by-step execution details
@@ -217,7 +195,7 @@ Rich, interactive HTML reports with detailed execution insights:
 ### 🥒 **Cucumber Reports**
 Standard BDD reports in multiple formats:
 
-- **📍 Location:** `target/cucumber-reports/`
+- **📍 Location:** `target/cucumber.html`
 - **📋 Formats:** HTML, JSON, XML
 
 ### 📊 **Excel Reports**
@@ -237,6 +215,7 @@ Automatic screenshot capture on test failures:
 ## ⚙️ Configuration
 
 ### 🔧 **config.properties**
+Change the baseUrl, browser, and test user credentials here:
 ```properties
 # Application Settings
 baseUrl=https://www.amazon.com
@@ -254,14 +233,14 @@ reports.extent=true
 ```
 
 ### 📊 **testdata.xlsx**
-Configure your test data in the Excel file:
+Modify or add test data for your data-driven scenarios (e.g., add new products to search for):
 - **Sheet 1:** Login credentials
 - **Sheet 2:** Search keywords
 - **Sheet 3:** Product details
 - **Sheet 4:** Checkout information
 
 ### 🎯 **testng.xml**
-Customize test execution:
+Modify the test suite to run specific classes or pass parameters to your tests:
 ```xml
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
 <suite name="Amazon Automation Suite">
@@ -272,11 +251,3 @@ Customize test execution:
     </test>
 </suite>
 ```
-
----
-
-<div align="center">
-
-Made by Anukul Chauhan
-
-</div>
