@@ -6,6 +6,7 @@ import com.aventstack.extentreports.ExtentTest;
 import com.aventstack.extentreports.MediaEntityBuilder;
 import io.cucumber.java.*;
 import org.openqa.selenium.WebDriver;
+import reporters.CucumberReportGenerator; // <-- IMPORT THE NEW CLASS
 import utils.ResultsExcelWriter;
 import utils.ScreenshotUtils;
 
@@ -44,6 +45,9 @@ public class Hooks {
 
         // Close the Excel writer
         ResultsExcelWriter.close();
+
+        // Generate the pretty Cucumber HTML report from the JSON file
+        CucumberReportGenerator.generateReport();
 
         // Close the browser ONCE after all scenarios are done
         DriverFactory.quitDriver();
@@ -94,3 +98,4 @@ public class Hooks {
         }
     }
 }
+

@@ -71,6 +71,16 @@
             <version>5.7.8</version>
         </dependency>
 
+        <!-- ================== THIS IS THE FIX ================== -->
+        <!-- Explicitly add a newer version of commons-io to resolve the conflict -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.16.1</version>
+        </dependency>
+        <!-- ====================================================== -->
+
+
         <!-- ===== Extent Reports (used in main) ===== -->
         <dependency>
             <groupId>com.aventstack</groupId>
@@ -109,12 +119,23 @@
         </dependency>
 
         <!-- ===== Optional: helper for some Cucumber/Jackson envs ===== -->
+        <!-- Jackson Libraries for cucumber-reporting -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <version>${jackson.version}</version>
-            <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
 
         <!-- NOTE: Do NOT add cucumberProject:cucumberExamples (it doesn't exist) -->
         <!-- NOTE: DevTools artifact is optional; add only if you want to silence CDP warning:

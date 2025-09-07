@@ -12,8 +12,9 @@ import org.testng.annotations.DataProvider;
         // output reports
         plugin = {
                 "pretty",
-                "html:target/cucumber.html",
-                "json:target/cucumber.json"
+                // We'll put the reports in a dedicated folder for cleanliness
+                "html:target/cucumber-reports/cucumber.html",
+                "json:target/cucumber-reports/cucumber.json"
         },
         monochrome = true
 )
