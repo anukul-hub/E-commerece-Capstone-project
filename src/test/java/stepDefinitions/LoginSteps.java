@@ -224,7 +224,7 @@ public class LoginSteps {
         Assert.assertTrue(ok, "Expected error like '" + expected + "' but saw: " + actual);
     }
 
-    // --------- For Flow.feature: invalid login negative scenario ----------
+    // --------- For UserJourneyTests.feature: invalid login negative scenario ----------
     @And("I try to login with invalid credentials {string} and {string}")
     public void i_try_to_login_with_invalid_credentials_and(String email, String password) {
         // Reuse existing helpers where possible

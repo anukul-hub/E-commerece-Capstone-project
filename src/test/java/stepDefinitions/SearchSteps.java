@@ -61,103 +61,81 @@ public class SearchSteps {
     public void i_select_the_book_from_results() {
         WebDriver driver = DriverFactory.getDriver();
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(25));
-        String targetLower = "system design by alex wu";
+        WebElement chosenLink = null;
 
-        // 1) Try to prefer /dp/ anchors with physical-format text in the card
-        WebElement chosen = null;
         try {
-            List<WebElement> anchors = driver.findElements(By.xpath("//a[contains(@href,'/dp/') or contains(@href,'/gp/product/')]"));
-            for (WebElement a : anchors) {
+            // This is a more stable locator for the main container of each search result.
+            // 'data-asin' is Amazon's unique ID and is less likely to change than CSS classes.
+            By resultContainerLocator = By.cssSelector("div[data-component-type='s-search-result']");
+            wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(resultContainerLocator, 0));
+            List<WebElement> resultContainers = driver.findElements(resultContainerLocator);
+
+            // Find the first visible and clickable product link within the containers.
+            // The main link is usually inside an <h2> tag.
+            for (WebElement container : resultContainers) {
                 try {
-                    if (!a.isDisplayed() || !a.isEnabled()) continue;
-                    // find enclosing card and check for "paperback"/"hardcover"
-                    WebElement card = null;
-                    try {
-                        card = a.findElement(By.xpath("./ancestor::div[contains(@data-asin,'') or contains(@class,'s-result-item')]"));
-                    } catch (Exception ignored) {
+                    WebElement link = container.findElement(By.cssSelector("h2 a.a-link-normal"));
+                    if (link.isDisplayed() && link.isEnabled()) {
+                        chosenLink = link;
+                        break; // Found a valid link, exit the loop
                     }
-                    boolean hasPhysical = false;
-                    if (card != null) {
-                        String txt = card.getText().toLowerCase();
-                        if (txt.contains("paperback") || txt.contains("hardcover") || txt.contains("paper back"))
-                            hasPhysical = true;
-                    }
-                    String atxt = "";
-                    try {
-                        atxt = a.getText().toLowerCase();
-                    } catch (Exception ignored) {
-                    }
-                    boolean titleMatches = atxt.contains("clean") && atxt.contains("code");
-                    if (titleMatches && hasPhysical) {
-                        chosen = a;
-                        break;
-                    }
-                    if (chosen == null && titleMatches) chosen = a; // fallback
-                } catch (StaleElementReferenceException ignored) {
+                } catch (NoSuchElementException | StaleElementReferenceException ignored) {
+                    // Ignore if a container doesn't have the link or is stale
                 }
             }
-        } catch (Exception ignored) {
-        }
 
-        // 2) Fallback: common h2->a inside result card
-        if (chosen == null) {
-            try {
-                chosen = driver.findElement(By.cssSelector("div.s-main-slot [data-component-type='s-search-result'] h2 a"));
-            } catch (Exception ignored) {
+            // If the primary locator fails, try a broader fallback
+            if (chosenLink == null) {
+                chosenLink = driver.findElement(By.cssSelector("a.a-link-normal.s-underline-text.s-underline-link-text"));
             }
+
+        } catch (Exception e) {
+            // If any error occurs during search, we'll hit the failure logic below.
+            System.err.println("Error finding product link: " + e.getMessage());
         }
 
-        // 3) Fallback: any anchor with title text containing both words
-        if (chosen == null) {
-            try {
-                chosen = driver.findElement(By.xpath("//a[contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'clean') and contains(translate(normalize-space(.),'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'code')]"));
-            } catch (Exception ignored) {
-            }
-        }
 
-        if (chosen == null) {
+        // If no link was found after trying, fail the test and save the page source for debugging.
+        if (chosenLink == null) {
             try {
                 java.nio.file.Files.write(java.nio.file.Paths.get("failed_search_results.html"),
                         driver.getPageSource().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            } catch (Exception ignored) {
-            }
-            System.out.println("DEBUG: No clickable product link found in results. URL: " + driver.getCurrentUrl());
-            Assert.fail("No clickable search result link was found.");
+                System.out.println("DEBUG: Saved failed_search_results.html for inspection.");
+            } catch (Exception ignored) {}
+            Assert.fail("No clickable search result link was found on the page.");
             return;
         }
 
-        // click chosen link (scroll + JS fallback)
+        // Safely click the chosen link (scroll into view + JS fallback)
         try {
-            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", chosen);
-        } catch (Exception ignored) {
-        }
-        try {
-            wait.until(ExpectedConditions.elementToBeClickable(chosen)).click();
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", chosenLink);
+            wait.until(ExpectedConditions.elementToBeClickable(chosenLink)).click();
         } catch (Exception e) {
             try {
-                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", chosen);
+                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", chosenLink);
             } catch (Exception ex) {
-                Assert.fail("Failed to click chosen product link: " + ex.getMessage());
+                Assert.fail("Failed to click the chosen product link: " + ex.getMessage());
                 return;
             }
         }
 
-        // switch to new window if opened, or remain if same window
+        // Switch to the new window/tab if one was opened
         try {
             String original = driver.getWindowHandle();
-            Thread.sleep(600);
-            for (String h : driver.getWindowHandles()) {
-                if (!h.equals(original)) {
-                    driver.switchTo().window(h);
+            // Wait a moment for the new window to open
+            Thread.sleep(800);
+            for (String handle : driver.getWindowHandles()) {
+                if (!handle.equals(original)) {
+                    driver.switchTo().window(handle);
                     break;
                 }
             }
-            // wait for PDP-ish content (dp in url or add-to-cart/buy-now or page title)
+            // Wait for the Product Detail Page (PDP) to load
             wait.until(d -> d.getCurrentUrl().contains("/dp/") ||
                     !d.findElements(By.id("add-to-cart-button")).isEmpty() ||
-                    !d.findElements(By.id("buy-now-button")).isEmpty() ||
-                    (d.getTitle() != null && d.getTitle().length() > 8));
+                    !d.findElements(By.id("buy-now-button")).isEmpty());
         } catch (Exception ignored) {
+            // Ignore if no new window, or if wait times out
         }
     }
 
@@ -253,18 +231,4 @@ public class SearchSteps {
                 "Invalid search should show no results or suggestions");
     }
 
-//    @When("I search for a very long string")
-//    public void i_search_for_a_very_long_string() {
-//        init();
-//        String longTerm = "a".repeat(620);
-//        homePage.enterSearchText(longTerm);
-//        homePage.clickSearchButton();
-//    }
-//
-//    @Then("the page should handle the input gracefully")
-//    public void the_page_should_handle_the_input_gracefully() {
-//        init();
-//        resultsPage.waitUntilResultsOrMessage(Duration.ofSeconds(15));
-//        Assert.assertTrue(resultsPage.title().length() > 0, "Page handled long input");
-//    }
 }

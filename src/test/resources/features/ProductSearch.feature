@@ -29,9 +29,4 @@ Feature: Amazon Product Search
     Given I launch the application
     When I search for "ksdfjerfyt"
     Then I should see no results or suggestions
-#
-#  @negative
-#  Scenario: Long string search
-#    Given I launch the application
-#    When I search for a very long string
-#    Then the page should handle the input gracefully
+
