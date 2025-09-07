@@ -153,7 +153,7 @@ amazon-web-automation/
 
 1. **Clone the repository:**
    ```bash
-   git clone <your-repository-url>
+   git clone https://github.com/anukul-hub/E-commerece-Capstone-project-amazon-automation.git
    cd amazon-web-automation
    ```
 
@@ -275,36 +275,8 @@ Customize test execution:
 
 ---
 
-## 🤝 Contributing
-
-1. **Fork** the repository
-2. **Create** your feature branch: `git checkout -b feature/amazing-feature`
-3. **Commit** your changes: `git commit -m 'Add amazing feature'`
-4. **Push** to the branch: `git push origin feature/amazing-feature`
-5. **Open** a Pull Request
-
----
-
-## 📞 Support
-
-For questions or issues:
-
-- 🐛 **Bug Reports:** [Create an Issue](../../issues)
-- 💡 **Feature Requests:** [Create an Enhancement](../../issues)
-- 📧 **Contact:** your-email@example.com
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
 <div align="center">
 
-**⭐ Star this repository if you found it helpful!**
-
-Made with ❤️ by [Your Name]
+Made by Anukul Chauhan
 
 </div>
