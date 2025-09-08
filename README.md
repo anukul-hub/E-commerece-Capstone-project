@@ -169,10 +169,6 @@ mvn clean test -Dsurefire.suiteXmlFiles=testng.xml
 mvn clean test -Dbrowser=chrome
 ```
 
-**Run with custom environment:**
-```bash
-mvn clean test -Denv=staging -Dbrowser=firefox
-```
 
 ### 💻 IDE Execution
 
