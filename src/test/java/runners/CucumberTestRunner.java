@@ -20,5 +20,10 @@ import org.testng.annotations.DataProvider;
 )
 public class CucumberTestRunner extends AbstractTestNGCucumberTests {
 
-
+    // Single-threaded data provider (change to true to run scenarios in parallel)
+    @Override
+    @DataProvider(parallel = false)
+    public Object[][] scenarios() {
+        return super.scenarios();
+    }
 }

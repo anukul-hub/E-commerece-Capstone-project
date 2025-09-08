@@ -225,7 +225,7 @@ public class BookPurchaseSteps {
                         try {
                             pick.click();
                         } catch (Exception e) {
-                            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", pick);
+                            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", e);
                         }
                         Thread.sleep(800);
 
@@ -311,82 +311,61 @@ public class BookPurchaseSteps {
     @And("I enter valid shipping details")
     public void i_enter_valid_shipping_details() {
         init();
-        // --- QUICK SKIP: try to go straight from Cart -> Checkout/Payment ---
-        try {
-            // If we are on a cart page (your log shows cart URL), attempt to click checkout buttons
-            String url = "";
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+
+        // This step is now responsible for getting from the cart/pdp to the payment page.
+        // It must robustly handle the address selection page if it appears.
+
+        // 1. First, try to click a "Proceed to Checkout" button.
+        By[] proceedButtons = {
+                By.id("sc-buy-box-ptc-button"),
+                By.name("proceedToCheckout"),
+                By.id("hlb-ptc-btn-native"),
+                By.xpath("//input[contains(@name, 'proceedToRetailCheckout')]")
+        };
+
+        for (By selector : proceedButtons) {
             try {
-                url = driver.getCurrentUrl().toLowerCase();
-            } catch (Exception ignored) {
-            }
-            if (url.contains("/cart") || url.contains("cart/smart-wagon") || url.contains("/gp/cart")) {
-                List<By> checkoutBtns = Arrays.asList(
-                        // common "Proceed to checkout" / "Proceed to buy" / "Place order" selectors
-                        By.id("sc-buy-box-ptc-button-announce"),
-                        By.id("sc-buy-box-ptc-button"),
-                        By.id("hlb-ptc-btn-native"),                       // older Amazon
-                        By.xpath("//input[@name='proceedToCheckout' or @name='proceedToCheckout']"),
-                        By.xpath("//a[contains(.,'Proceed to checkout') or contains(.,'Proceed to buy') or contains(.,'Proceed to payment')]"),
-                        By.xpath("//button[contains(.,'Proceed to checkout') or contains(.,'Proceed to buy') or contains(.,'Proceed to payment')]"),
-                        By.cssSelector("input[type='submit'][name='proceedToCheckout']")
-                );
-
-                boolean navigated = false;
-                for (By b : checkoutBtns) {
-                    try {
-                        List<WebElement> els = driver.findElements(b);
-                        for (WebElement e : els) {
-                            if (e == null) continue;
-                            try {
-                                if (!e.isDisplayed() || !e.isEnabled()) continue;
-                                ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", e);
-                                try {
-                                    e.click();
-                                } catch (Exception ex) {
-                                    ((JavascriptExecutor) driver).executeScript("arguments[0].click();", e);
-                                }
-                                Thread.sleep(800);
-                                // small wait for navigation or payment elements to appear
-                                WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(6));
-                                boolean moved = shortWait.until(d -> {
-                                    try {
-                                        String u = d.getCurrentUrl().toLowerCase();
-                                        if (u.contains("payment") || u.contains("placeorder") || u.contains("ap/pay") || u.contains("/gp/buy") || u.contains("/checkout"))
-                                            return true;
-                                        // also consider order review/summary elements present
-                                        if (!d.findElements(By.cssSelector("#subtotals, .order-review, #paymentSection, .pmts-error, .payment-method")).isEmpty())
-                                            return true;
-                                    } catch (Exception ignored) {
-                                    }
-                                    return false;
-                                });
-                                if (moved) {
-                                    navigated = true;
-                                    break;
-                                }
-                            } catch (Exception ignored) {
-                            }
-                        }
-                        if (navigated) break;
-                    } catch (Exception ignored) {
-                    }
+                List<WebElement> buttons = driver.findElements(selector);
+                if (!buttons.isEmpty() && buttons.get(0).isDisplayed()) {
+                    buttons.get(0).click();
+                    // Give a moment for the next page to load
+                    Thread.sleep(1000);
+                    break;
                 }
-
-                // If navigated to checkout/payment, return early (skip the address fiddling below)
-                if (navigated) {
-                    // Small stabilization pause
-                    try {
-                        Thread.sleep(600);
-                    } catch (InterruptedException ignored) {
-                    }
-                    // Optionally log
-                    System.out.println("Skipped address selection by clicking proceed-to-checkout (cart -> checkout/payment).");
-                    return;
-                }
-            }
-        } catch (Exception ignored) {
+            } catch (Exception ignored) {}
         }
-        // --- end QUICK SKIP ---
+
+        // 2. Now, we might be on the address selection page. We need to confirm an address.
+        // Wait for either the address page OR the payment page to be identifiable.
+        wait.until(ExpectedConditions.or(
+                ExpectedConditions.urlContains("addressselect"),
+                ExpectedConditions.urlContains("payment"),
+                ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[contains(text(), 'Select a delivery address')]")),
+                ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[contains(text(), 'Select a payment method')]"))
+        ));
+
+        // 3. If we are on the address page, click "Deliver to this address".
+        if (driver.getCurrentUrl().contains("addressselect")) {
+            try {
+                WebElement deliverButton = wait.until(ExpectedConditions.elementToBeClickable(
+                        By.xpath("//input[contains(@aria-labelledby, 'deliver-to-this-address')] | //span[contains(., 'Deliver to this address')]/preceding-sibling::input | //a[contains(., 'Deliver to this address')]")
+                ));
+                deliverButton.click();
+            } catch (Exception e) {
+                Assert.fail("Could not find or click the 'Deliver to this address' button on the address selection page. Error: " + e.getMessage());
+            }
+        }
+
+        // 4. Finally, verify we have landed on the payment page.
+        try {
+            wait.until(ExpectedConditions.or(
+                    ExpectedConditions.urlContains("payment"),
+                    ExpectedConditions.visibilityOfElementLocated(By.xpath("//h1[contains(text(), 'Select a payment method')]"))
+            ));
+        } catch (Exception e) {
+            Assert.fail("After handling shipping details, did not land on the payment page. Current URL: " + driver.getCurrentUrl());
+        }
     }
 
 
@@ -400,10 +379,8 @@ public class BookPurchaseSteps {
 
     @And("I select payment method {string} with invalid details")
     public void i_select_payment_method_with_invalid_details(String method) {
-        // If your test framework already initialises pages, remove this init() call.
-        // init(); // only if this sets up driver & page objects.
+        init();
 
-        // Ensure paymentPage exists. If not, construct it (example):
         if (paymentPage == null) {
             paymentPage = new pages.PaymentPage(driver);
         }
@@ -422,13 +399,11 @@ public class BookPurchaseSteps {
             System.out.println("[Step] Filled invalid payment details for: " + method);
         }
 
-        // Wait a bit for the system to process attempt (adjust timeout as needed)
+        // Wait a bit for the system to process attempt
         try {
             Thread.sleep(3000);
         } catch (InterruptedException ignored) {
         }
-
-        // Optionally, click any "submit" / "continue" button if your flow requires it here.
     }
 
 

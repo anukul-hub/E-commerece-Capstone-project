@@ -4,8 +4,12 @@ import base.DriverFactory;
 import io.cucumber.java.en.Then;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebElement;
 import org.testng.Assert;
 import pages.HomePage;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class HomeSteps {
 
@@ -257,9 +261,26 @@ public class HomeSteps {
 
     @Then("I should not see any broken links on home page")
     public void i_should_not_see_broken_links() {
-        int empties = DriverFactory.getDriver().findElements(By.cssSelector("a[href=''], a:not([href])")).size();
-        Assert.assertTrue(empties < 50, "Found many anchors with empty/no href: " + empties);
+        // Find all visible links on the page
+        List<WebElement> links = DriverFactory.getDriver().findElements(By.tagName("a"));
+        List<String> brokenLinks = links.stream()
+                .filter(WebElement::isDisplayed) // Consider only visible links
+                .map(link -> link.getAttribute("href"))
+                .filter(href -> href != null && !href.isEmpty() && !href.toLowerCase().startsWith("javascript"))
+                .filter(href -> {
+                    // This is a simple check. A full check would require an HTTP request for each link.
+                    // For UI testing, we check for common non-functional patterns.
+                    return href.trim().equals("#") || href.trim().isEmpty();
+                })
+                .collect(Collectors.toList());
+
+        if (!brokenLinks.isEmpty()) {
+            System.out.println("Found potentially broken links: " + brokenLinks);
+        }
+        // Assert that no visible, non-javascript links are pointing to "#" or are empty.
+        Assert.assertTrue(brokenLinks.isEmpty(), "Found " + brokenLinks.size() + " potentially broken/placeholder links on the page.");
     }
+
 
     @Then("I should see properly aligned UI elements")
     public void i_should_see_ui_aligned() {

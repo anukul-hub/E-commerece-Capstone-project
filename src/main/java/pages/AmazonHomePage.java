@@ -16,7 +16,9 @@ public class AmazonHomePage {
 
     private final By searchBox = By.id("twotabsearchtextbox");
     private final By searchButton = By.id("nav-search-submit-button");
-    private final By deptDropdown = By.id("searchDropdownBox");
+    private final By deptDropdownTrigger = By.id("searchDropdownBox");
+    private final By deptDropdownOptions = By.cssSelector("select#searchDropdownBox > option");
+
 
     // Autocomplete (selectors can change; adjust if needed)
     private final By suggestionsContainer = By.id("nav-flyout-searchAjax");
@@ -167,18 +169,25 @@ public class AmazonHomePage {
 
     public void selectDepartment(String visibleText) {
         dismissOverlays();
-        WebElement dd = wait.until(ExpectedConditions.presenceOfElementLocated(deptDropdown));
-        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'})", dd);
+        WebElement dropdown = wait.until(ExpectedConditions.elementToBeClickable(deptDropdownTrigger));
 
+        // Amazon now uses a standard <select> dropdown, so the Select class is appropriate.
+        // If this changes in the future to a custom div-based dropdown, this logic will need to be updated.
         try {
-            wait.until(ExpectedConditions.elementToBeClickable(dd)).click();
-        } catch (Exception e) {
-            try {
-                ((JavascriptExecutor) driver).executeScript("arguments[0].click()", dd);
-            } catch (Exception ignored) {
+            Select select = new Select(dropdown);
+            select.selectByVisibleText(visibleText);
+        } catch (NoSuchElementException e) {
+            System.err.println("Could not find department with text: " + visibleText);
+            // As a fallback, try partial match
+            List<WebElement> options = driver.findElements(deptDropdownOptions);
+            for(WebElement option : options) {
+                if(option.getText().contains(visibleText)) {
+                    option.click();
+                    return;
+                }
             }
+            throw new NoSuchElementException("Department '" + visibleText + "' not found in dropdown.");
         }
-        new Select(dd).selectByVisibleText(visibleText);
     }
 
     public String getSearchValue() {

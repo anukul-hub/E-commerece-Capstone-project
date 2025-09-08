@@ -1,6 +1,7 @@
 package stepDefinitions;
 
 import base.DriverFactory;
+import com.aventstack.extentreports.Status;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -30,6 +31,7 @@ public class LoginSteps {
     }
 
     private void ensureOnSignInPage() {
+        Hooks.getTest().info("Navigating to the Sign-In page.");
         lp().openSignInPage();
         Assert.assertTrue(lp().isOnSignInPage(), "Not on Amazon sign-in page.");
         lastErrorMessage = "";
@@ -45,6 +47,8 @@ public class LoginSteps {
                         ConfigReader.getProperty("validEmail")));
         String password = ConfigReader.getProperty("validPassword");
 
+        Hooks.getTest().info("Attempting to log in with user: " + identifier);
+
         lp().enterIdentifier(identifier);
         lp().clickContinue();
 
@@ -53,14 +57,18 @@ public class LoginSteps {
         }
 
         if (!lp().waitForPasswordOrError(12)) {
+            Hooks.getTest().fail("Did not reach the password page. Error was: " + lp().getErrorMessage());
             Assert.fail("Did not reach password page. Error: " + lp().getErrorMessage());
         }
 
         lp().enterPassword(password);
+        Hooks.getTest().info("Entered password.");
         lp().clickSignIn();
+        Hooks.getTest().info("Clicked Sign-In button.");
 
         Assert.assertTrue(hp().isLogoDisplayed(),
                 "Login did not reach a visible Amazon header/home.");
+        Hooks.getTest().pass("Login was successful. Amazon logo is visible.");
     }
 
     // ================== PARAMETERIZED (MOBILE/EMAIL SHARED) ==================
@@ -68,6 +76,7 @@ public class LoginSteps {
     public void i_enter_mobile_and_password(String mobile, String password) {
         ensureOnSignInPage();
 
+        Hooks.getTest().info("Entering identifier (mobile/email): " + mobile);
         lp().enterIdentifier(mobile);
         lp().clickContinue();
 
@@ -77,9 +86,11 @@ public class LoginSteps {
 
         boolean onPasswordPage = lp().waitForPasswordOrError(10);
         if (onPasswordPage) {
+            Hooks.getTest().info("Entering password.");
             lp().enterPassword(password);               // valid flow
         } else {
             lastErrorMessage = lp().getErrorMessage();   // negative flow remains on identifier page
+            Hooks.getTest().warning("Did not proceed to password page. Error: " + lastErrorMessage);
         }
     }
 
@@ -92,6 +103,7 @@ public class LoginSteps {
     @And("I click on login button")
     public void i_click_on_login_button() {
         try {
+            Hooks.getTest().info("Clicking the final Sign-In button.");
             lp().clickSignIn();
         } catch (Exception ignored) {
         }
@@ -100,6 +112,7 @@ public class LoginSteps {
     @Then("I should be logged in successfully")
     public void i_should_be_logged_in_successfully() {
         Assert.assertTrue(hp().isLogoDisplayed(), "Amazon logo not visible → login likely failed.");
+        Hooks.getTest().pass("Verified: Login successful, Amazon logo is displayed.");
     }
 
     // ================== NAVIGATION / SESSION ==================
@@ -108,6 +121,7 @@ public class LoginSteps {
         ensureOnSignInPage();
 
         // 1st attempt with whatever the scenario provided
+        Hooks.getTest().info("Logging in with: " + emailOrMobile);
         lp().enterIdentifier(emailOrMobile);
         lp().clickContinue();
         if (lp().clickProceedToCreateAccountIfPresent()) {
@@ -121,6 +135,7 @@ public class LoginSteps {
             String fallbackEmail = ConfigReader.getProperty("validEmail");
             if (fallbackEmail != null && !fallbackEmail.isBlank()
                     && !fallbackEmail.equalsIgnoreCase(emailOrMobile)) {
+                Hooks.getTest().info("Initial identifier failed, trying fallback email: " + fallbackEmail);
                 lp().openSignInPage();
                 lp().enterIdentifier(fallbackEmail);
                 lp().clickContinue();
@@ -137,22 +152,26 @@ public class LoginSteps {
         lp().enterPassword(password);
         lp().clickSignIn();
         Assert.assertTrue(hp().isLogoDisplayed(), "Login failed with provided credentials.");
+        Hooks.getTest().info("Successfully logged in for pre-condition.");
     }
 
     @When("I navigate to {string} category")
     public void i_navigate_to_category(String category) {
+        Hooks.getTest().info("Navigating to category: " + category);
         hp().navigateToCategory(category);
     }
 
     @Then("My session should remain active")
     public void my_session_should_remain_active() {
         Assert.assertTrue(hp().isLogoDisplayed(), "Session not active / header not visible.");
+        Hooks.getTest().pass("Verified: Session is still active.");
     }
 
     // ================== NEGATIVE FLOWS ==================
     @When("I try to login with blank email and password")
     public void i_try_to_login_with_blank_email_and_password() {
         ensureOnSignInPage();
+        Hooks.getTest().info("Testing login with blank credentials.");
         // leave identifier blank and press Continue
         lp().clickContinue();
         lastErrorMessage = lp().getErrorMessage();
@@ -186,7 +205,7 @@ public class LoginSteps {
             actual = "identifier-empty";
         }
 
-        System.out.println("[ASSERT ERROR] expected='" + expected + "' actual='" + actual + "'");
+        Hooks.getTest().info("Verifying error message. Expected: '" + expected + "', Actual: '" + actual + "'");
 
         String e = expected == null ? "" : expected.trim().toLowerCase();
         String a = actual == null ? "" : actual.trim().toLowerCase();
@@ -221,15 +240,21 @@ public class LoginSteps {
             ok = nonEmptyAny;  // fallback
         }
 
+        if(ok) {
+            Hooks.getTest().pass("Correct error message was displayed.");
+        } else {
+            Hooks.getTest().fail("Incorrect error message. Expected: '" + expected + "', Actual: '" + actual + "'");
+        }
+
         Assert.assertTrue(ok, "Expected error like '" + expected + "' but saw: " + actual);
     }
 
-    // --------- For UserJourneyTests.feature: invalid login negative scenario ----------
+    // --------- For Flow.feature: invalid login negative scenario ----------
     @And("I try to login with invalid credentials {string} and {string}")
     public void i_try_to_login_with_invalid_credentials_and(String email, String password) {
         // Reuse existing helpers where possible
         ensureOnSignInPage();
-
+        Hooks.getTest().info("Testing with invalid credentials. User: " + email);
         lp().enterIdentifier(email);
         lp().clickContinue();
 
@@ -253,7 +278,7 @@ public class LoginSteps {
             if (lastErrorMessage == null) lastErrorMessage = "";
         }
 
-        System.out.println("[DEBUG] Captured login error text: '" + lastErrorMessage + "'");
+        Hooks.getTest().info("Captured login error text: '" + lastErrorMessage + "'");
     }
 
     @Then("I should see login error message")
@@ -262,13 +287,19 @@ public class LoginSteps {
                 ? lp().getErrorMessage()
                 : lastErrorMessage;
 
-        System.out.println("[DEBUG] Captured login error text (assert): '" + actual + "'");
+        Hooks.getTest().info("Asserting that a login error message is present. Found: '" + actual + "'");
 
         // if Amazon didn’t show explicit error, at least assert user NOT logged in
         boolean logoVisible = false;
         try {
             logoVisible = hp().isLogoDisplayed();
         } catch (Exception ignored) {
+        }
+
+        if ((actual != null && !actual.isBlank()) || !logoVisible) {
+            Hooks.getTest().pass("Login failed as expected.");
+        } else {
+            Hooks.getTest().fail("Login succeeded unexpectedly.");
         }
 
         Assert.assertTrue((actual != null && !actual.isBlank()) || !logoVisible,

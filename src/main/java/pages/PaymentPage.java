@@ -24,7 +24,8 @@ public class PaymentPage {
             By.xpath("//button[contains(translate(.,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'deliver to this')]"),
             By.xpath("//a[contains(translate(.,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'deliver to this')]"),
             By.xpath("//button[contains(.,'Deliver to this address')]"),
-            By.xpath("//a[contains(.,'Deliver to this address')]")
+            By.xpath("//a[contains(.,'Deliver to this address')]"),
+            By.xpath("//input[contains(@aria-labelledby, 'deliver-to-this-address')]")
     );
     private List<By> addAddressCandidates = Arrays.asList(
             By.xpath("//button[contains(translate(.,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'add a new delivery address')]"),
@@ -35,7 +36,7 @@ public class PaymentPage {
     private List<By> paymentPanelLocators = Arrays.asList(
             By.xpath("//h2[contains(translate(.,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'payment method')]/ancestor::div[1]"),
             By.xpath("//div[contains(translate(.,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'payment method') and (contains(@class,'section') or contains(@class,'panel'))]"),
-            By.xpath("//h2[contains(translate(.,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'payment method')]")
+            By.xpath("//h1[contains(translate(.,'ABCDEFGHIJKLMNOPQRSTUVWXYZ','abcdefghijklmnopqrstuvwxyz'),'payment method')]")
     );
     private List<By> creditCardLocators = Arrays.asList(
             By.xpath("//input[@value='creditCard']"),
@@ -263,7 +264,7 @@ public class PaymentPage {
                 for (WebElement el : els) {
                     if (el != null && el.isDisplayed()) {
                         el.clear();
-                        el.sendKeys("123456");
+                        el.sendKeys("123456"); // Using a shorter, clearly invalid number
                         System.out.println("[PaymentPage] filled card number using: " + by);
                         filledCard = true;
                         break;
@@ -286,7 +287,7 @@ public class PaymentPage {
                             for (WebElement el : els) {
                                 if (el != null && el.isDisplayed()) {
                                     el.clear();
-                                    el.sendKeys("123456");
+                                    el.sendKeys("123456"); // Using a shorter, clearly invalid number
                                     System.out.println("[PaymentPage] filled card number inside iframe using: " + by);
                                     filledCard = true;
                                     break;
