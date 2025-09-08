@@ -4,6 +4,9 @@
 [![Selenium](https://img.shields.io/badge/Selenium-WebDriver-green.svg)](https://selenium.dev/)
 [![TestNG](https://img.shields.io/badge/TestNG-7.0+-blue.svg)](https://testng.org/)
 [![Maven](https://img.shields.io/badge/Maven-3.6+-red.svg)](https://maven.apache.org/)
+[![Cucumber](https://img.shields.io/badge/Cucumber-7.0+-brightgreen.svg)](https://cucumber.io/)
+[![ExtentReports](https://img.shields.io/badge/ExtentReports-5.0+-blueviolet.svg)](https://www.extentreports.com/)
+
 
 A robust test automation framework designed to validate the functionality of the Amazon e-commerce website, built with Java, Selenium, TestNG, and Cucumber following industry best practices including **BDD** and **Page Object Model**.
 
