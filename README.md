@@ -185,7 +185,7 @@ mvn clean test -Denv=staging -Dbrowser=firefox
 ### 📈 **Extent Reports**
 Rich, interactive HTML reports with detailed execution insights:
 
-- **📍 Location:** `test-output/ExtentReport_Dashboard.html` and `test-output/ExtentReport_Tests.html`
+- **📍 Location:** `test-output/extent-report.html` 
 - **✨ Features:**
   - Test execution dashboard
   - Step-by-step execution details
@@ -195,20 +195,14 @@ Rich, interactive HTML reports with detailed execution insights:
 ### 🥒 **Cucumber Reports**
 Standard BDD reports in multiple formats:
 
-- **📍 Location:** `target/cucumber.html`
-- **📋 Formats:** HTML, JSON, XML
-
-### 📊 **Excel Reports**
-Simplified test results summary:
-
-- **📍 Location:** `test-output/TestResults.xlsx`
-- **🔗 Features:** Hyperlinked screenshots for quick debugging
+- **📍 Location:** `target/cucumber-reports/cucumber.html`
+- **📋 Formats:** HTML, JSON
 
 ### 📸 **Screenshots**
 Automatic screenshot capture on test failures:
 
-- **📍 Location:** `screenshots/`
-- **🎯 Naming:** `TestName_Timestamp.png`
+- **📍 Location:** `test-outpt/screenshots/`
+- **🎯 Naming:** `Scenario_TestName_Timestamp.png`
 
 ---
 
@@ -218,14 +212,15 @@ Automatic screenshot capture on test failures:
 Change the baseUrl, browser, and test user credentials here:
 ```properties
 # Application Settings
-baseUrl=https://www.amazon.com
+baseUrl=https://www.amazon.in
 browser=chrome
 headless=false
-timeout=10
+explicitWait=25
 
 # Test User Credentials
-testUser.email=test@example.com
-testUser.password=testPassword123
+regMobile=your_mobile
+regName=Anukul Chauhan
+regPassword=tempPAss
 
 # Reporting
 reports.screenshots=true
@@ -241,12 +236,13 @@ Modify or add test data for your data-driven scenarios (e.g., add new products t
 
 ### 🎯 **testng.xml**
 Modify the test suite to run specific classes or pass parameters to your tests:
+
 ```xml
 <!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
 <suite name="Amazon Automation Suite">
     <test name="Smoke Tests">
         <classes>
-            <class name="runners.TestRunner"/>
+            <class name="runners.CucumberTestRunner"/>
         </classes>
     </test>
 </suite>
