@@ -132,7 +132,7 @@ A robust test automation framework designed to validate the functionality of the
 1. **Clone the repository:**
    ```bash
    git clone https://github.com/anukul-hub/E-commerece-Capstone-project-amazon-automation.git
-   cd amazon-web-automation
+   cd E-commerece-Capstone-project-amazon-automation
    ```
 
 2. **Install dependencies:**
