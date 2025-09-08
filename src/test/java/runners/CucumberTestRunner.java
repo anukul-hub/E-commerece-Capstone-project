@@ -20,5 +20,5 @@ import org.testng.annotations.DataProvider;
 )
 public class CucumberTestRunner extends AbstractTestNGCucumberTests {
 
-   
+
 }
