@@ -226,13 +226,6 @@ reports.screenshots=true
 reports.extent=true
 ```
 
-### 📊 **testdata.xlsx**
-Modify or add test data for your data-driven scenarios (e.g., add new products to search for):
-- **Sheet 1:** Login credentials
-- **Sheet 2:** Search keywords
-- **Sheet 3:** Product details
-- **Sheet 4:** Checkout information
-
 ### 🎯 **testng.xml**
 Modify the test suite to run specific classes or pass parameters to your tests:
 
