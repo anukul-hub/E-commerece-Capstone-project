@@ -6,8 +6,8 @@ target/
 *.ear
 
 #docx,ppt, pdf
-*.pptx
-*.pdf
+#*.pptx
+#*.pdf
 # Maven
 .mvn/
 mvnw
