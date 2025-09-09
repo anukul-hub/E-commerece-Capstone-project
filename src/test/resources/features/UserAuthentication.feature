@@ -4,12 +4,12 @@ Feature: Login Page Validation
   # -------- Positive Scenarios --------
   Scenario: Login with valid email and password
     Given I launch the application
-    When I enter email "6391625760" and password "4TbRQrnBP9j&@7c"
+    When I enter email "mynumber" and password "mypass"
     And I click on login button
     Then I should be logged in successfully
 
   Scenario: Verify session persistence while browsing
-    Given I am logged in with email "6391625760" and password "4TbRQrnBP9j&@7c"
+    Given I am logged in with email "mynumber" and password "mypass"
     When I navigate to "Electronics" category
     Then My session should remain active
 

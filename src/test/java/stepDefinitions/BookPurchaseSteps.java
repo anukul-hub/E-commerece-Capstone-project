@@ -3,6 +3,7 @@ package stepDefinitions;
 import base.DriverFactory;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 import org.openqa.selenium.*;
 import org.openqa.selenium.logging.LogEntries;
 import org.openqa.selenium.logging.LogEntry;
@@ -35,6 +36,162 @@ public class BookPurchaseSteps {
             checkoutPage = new CheckoutPage(driver);
             paymentPage = new PaymentPage(driver);
         }
+    }
+
+    @Then("I should be taken to the product detail page")
+    public void i_should_be_taken_to_the_product_detail_page() {
+        init();
+        // Increased timeout for added stability on slow-loading pages.
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(25));
+        boolean onPdp = wait.until(ExpectedConditions.or(
+                ExpectedConditions.urlContains("/dp/"),
+                ExpectedConditions.visibilityOfElementLocated(By.id("add-to-cart-button")),
+                ExpectedConditions.visibilityOfElementLocated(By.id("productTitle"))
+        ));
+        Assert.assertTrue(onPdp, "Not on the product detail page, or key elements are missing. URL is: " + driver.getCurrentUrl());
+    }
+
+    @When("I click the {string} button")
+    public void i_click_the_button(String buttonText) {
+        init();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        WebElement button = null;
+        try {
+            if (buttonText.equalsIgnoreCase("Add to Cart")) {
+                button = wait.until(ExpectedConditions.elementToBeClickable(By.id("add-to-cart-button")));
+            } else if (buttonText.equalsIgnoreCase("Proceed to Buy")) {
+                // Using a more specific selector for Proceed to Buy on the cart page
+                button = wait.until(ExpectedConditions.elementToBeClickable(By.name("proceedToRetailCheckout")));
+            } else {
+                Assert.fail("Button text '" + buttonText + "' is not handled in this step.");
+            }
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", button);
+            button.click();
+        } catch (Exception e) {
+            Assert.fail("Could not click the '" + buttonText + "' button. Error: " + e.getMessage());
+        }
+    }
+
+    // **NEW STEP IMPLEMENTATION TO HANDLE ADDRESS PAGE**
+    @And("I confirm the shipping address")
+    public void i_confirm_the_shipping_address() {
+        init();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        try {
+            // Amazon might show an address page. We need to click "Deliver to this address" or a similar button.
+            WebElement deliverButton = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//input[contains(@aria-labelledby, 'deliver-to-this-address')] | //input[contains(@name, 'shipToThisAddress')]")
+            ));
+            deliverButton.click();
+        } catch (TimeoutException e) {
+            System.out.println("INFO: Address confirmation page was not shown or was skipped. Proceeding to payment.");
+            // This is not a failure, as sometimes Amazon skips this page if there's only one address.
+        } catch (Exception e) {
+            Assert.fail("Could not confirm the shipping address. Error: " + e.getMessage());
+        }
+    }
+
+
+    @Then("I should see a confirmation message that the item was added")
+    public void i_should_see_a_confirmation_message_that_the_item_was_added() {
+        init();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        boolean confirmationVisible = wait.until(ExpectedConditions.or(
+                ExpectedConditions.visibilityOfElementLocated(By.xpath("//span[contains(.,'Added to Cart')]")),
+                ExpectedConditions.visibilityOfElementLocated(By.id("attach-added-to-cart-message")),
+                ExpectedConditions.visibilityOfElementLocated(By.id("NATC_SMART_WAGON_CONF_MSG_SUCCESS")),
+                ExpectedConditions.and(
+                        ExpectedConditions.visibilityOfElementLocated(By.id("nav-cart-count")),
+                        d -> !d.findElement(By.id("nav-cart-count")).getText().trim().equals("0") && !d.findElement(By.id("nav-cart-count")).getText().trim().isEmpty()
+                )
+        ));
+        Assert.assertTrue(confirmationVisible, "No confirmation message or cart update was visible after adding the item.");
+    }
+
+    @When("I click on the cart icon to view my cart")
+    public void i_click_on_the_cart_icon_to_view_my_cart() {
+        init();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        try {
+            WebElement cartIcon = wait.until(ExpectedConditions.elementToBeClickable(By.id("nav-cart")));
+            cartIcon.click();
+        } catch (Exception e) {
+            Assert.fail("Could not click on the cart icon. Error: " + e.getMessage());
+        }
+    }
+
+    @Then("the {string} page should be displayed")
+    public void the_page_should_be_displayed(String pageTitle) {
+        init();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        boolean titleIsCorrect = wait.until(ExpectedConditions.titleContains(pageTitle));
+        Assert.assertTrue(titleIsCorrect, "Expected page title to contain '" + pageTitle + "', but was '" + driver.getTitle() + "'");
+    }
+
+    @Then("the book {string} should be in the cart")
+    public void the_book_should_be_in_the_cart(String bookTitle) {
+        init();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        try {
+            WebElement bookInCart = wait.until(ExpectedConditions.visibilityOfElementLocated(
+                    By.xpath("//span[@class='a-truncate-cut' and contains(text(),\"" + bookTitle + "\")]")
+            ));
+            Assert.assertTrue(bookInCart.isDisplayed(), "Book '" + bookTitle + "' not found in cart.");
+        } catch (Exception e) {
+            Assert.fail("Book '" + bookTitle + "' not found in cart. Error: " + e.getMessage());
+        }
+    }
+
+    @Then("I validate that the price of the book is {string}")
+    public void i_validate_that_the_price_of_the_book_is(String price) {
+        init();
+        try {
+            WebElement priceElement = driver.findElement(By.xpath("//span[contains(@class,'sc-product-price')]"));
+            String actualPrice = priceElement.getText().replaceAll("[^0-9,.]", "").trim();
+            Assert.assertTrue(actualPrice.contains(price), "The price in the cart (" + actualPrice + ") does not match the expected price (" + price + ").");
+        } catch (Exception e) {
+            Assert.fail("Could not find the price element in the cart. Error: " + e.getMessage());
+        }
+    }
+
+    @Then("I should be on the checkout and payment page")
+    public void i_should_be_on_the_checkout_and_payment_page() {
+        init();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        boolean onCheckoutPage = wait.until(ExpectedConditions.or(
+                ExpectedConditions.titleContains("Checkout"),
+                ExpectedConditions.urlContains("buy/payselect"),
+                ExpectedConditions.visibilityOfElementLocated(By.xpath("//h1[contains(text(),'Select a payment method')]"))
+        ));
+        Assert.assertTrue(onCheckoutPage, "Not on the checkout/payment page. Current URL: " + driver.getCurrentUrl());
+    }
+
+    @When("I select the {string} radio button")
+    public void i_select_the_radio_button(String labelText) {
+        init();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        try {
+            // **UPDATED LOCATOR** - More robust way to find the radio button
+            WebElement radioButton = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//span[contains(., '" + labelText + "')]/ancestor::div[contains(@class, 'pmts-instrument-box')]//input[@type='radio']")
+            ));
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", radioButton);
+            // Using JS click as it can be more reliable for custom radio buttons
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", radioButton);
+        } catch (Exception e) {
+            Assert.fail("Could not select the '" + labelText + "' radio button. Error: " + e.getMessage());
+        }
+    }
+
+    @Then("the payment method should be selected and I can place the order")
+    public void the_payment_method_should_be_selected_and_i_can_place_the_order() {
+        init();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        boolean canProceed = wait.until(ExpectedConditions.or(
+                ExpectedConditions.elementToBeClickable(By.xpath("//input[contains(@name, 'useSelectedPaymentMethod')]")),
+                ExpectedConditions.elementToBeClickable(By.xpath("//span[contains(.,'Place your order and pay')]"))
+        ));
+        Assert.assertTrue(canProceed, "After selecting payment, the button to proceed/place order is not available.");
     }
 
     /**

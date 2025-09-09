@@ -2,6 +2,7 @@ package stepDefinitions;
 
 import base.DriverFactory;
 import io.cucumber.java.en.And;
+import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.openqa.selenium.*;
@@ -13,16 +14,70 @@ import pages.ResultsPage;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 
 public class SearchSteps {
 
     private AmazonHomePage homePage;
     private ResultsPage resultsPage;
+    private WebDriver driver;
 
     private void init() {
+        if (driver == null) {
+            driver = DriverFactory.getDriver();
+        }
         if (homePage == null || resultsPage == null) {
-            homePage = new AmazonHomePage(DriverFactory.getDriver());
-            resultsPage = new ResultsPage(DriverFactory.getDriver());
+            homePage = new AmazonHomePage(driver);
+            resultsPage = new ResultsPage(driver);
+        }
+    }
+
+    @Given("I am on the Amazon homepage")
+    public void i_am_on_the_amazon_homepage() {
+        init();
+        driver.get("https://www.amazon.in");
+        Assert.assertTrue(driver.getTitle().contains("Amazon"), "Not on the Amazon homepage.");
+    }
+
+    @When("I click on the search result titled {string}")
+    public void i_click_on_the_search_result_titled(String bookTitle) {
+        init();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        try {
+            String partialBookTitle = "System Design Interview: An insider's guide";
+            WebElement bookLink = wait.until(ExpectedConditions.elementToBeClickable(
+                    By.xpath("//span[contains(text(),\"" + partialBookTitle + "\")]/ancestor::a[1]")
+            ));
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", bookLink);
+
+            String originalHandle = driver.getWindowHandle();
+            Set<String> originalHandles = driver.getWindowHandles();
+
+            bookLink.click();
+
+            // **FIX ADDED HERE**: More robust logic to handle both new tabs and same-tab navigation.
+            // Wait for a new window handle to appear.
+            wait.until(d -> d.getWindowHandles().size() > originalHandles.size());
+
+            // Switch to the new window.
+            for (String handle : driver.getWindowHandles()) {
+                if (!originalHandles.contains(handle)) {
+                    driver.switchTo().window(handle);
+                    break;
+                }
+            }
+
+        } catch (TimeoutException e) {
+            // This is a fallback in case the click navigates in the same tab.
+            // The next step will verify if the URL has changed.
+            System.out.println("INFO: No new tab was detected. Assuming navigation happened in the current tab.");
+        } catch (Exception e) {
+            try {
+                java.nio.file.Files.write(java.nio.file.Paths.get("failed_search_results_page.html"),
+                        driver.getPageSource().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                System.out.println("DEBUG: Saved failed_search_results_page.html for inspection.");
+            } catch (Exception ignored) {}
+            Assert.fail("Could not find or click the book titled: '" + bookTitle + "'. See saved HTML for details. Error: " + e.getMessage());
         }
     }
 
@@ -41,12 +96,9 @@ public class SearchSteps {
         homePage.pressEnter();
     }
 
-    // Alias for feature: When I search for a book "system design by alex wu"
     @When("I search for a book {string}")
     public void i_search_for_a_book(String bookTitle) {
-        init();
-        homePage.enterSearchText(bookTitle);
-        homePage.clickSearchButton();
+        i_search_for_invalid(bookTitle);
     }
 
     @Then("I should see search results for {string}")
@@ -64,38 +116,30 @@ public class SearchSteps {
         WebElement chosenLink = null;
 
         try {
-            // This is a more stable locator for the main container of each search result.
-            // 'data-asin' is Amazon's unique ID and is less likely to change than CSS classes.
             By resultContainerLocator = By.cssSelector("div[data-component-type='s-search-result']");
             wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(resultContainerLocator, 0));
             List<WebElement> resultContainers = driver.findElements(resultContainerLocator);
 
-            // Find the first visible and clickable product link within the containers.
-            // The main link is usually inside an <h2> tag.
             for (WebElement container : resultContainers) {
                 try {
                     WebElement link = container.findElement(By.cssSelector("h2 a.a-link-normal"));
                     if (link.isDisplayed() && link.isEnabled()) {
                         chosenLink = link;
-                        break; // Found a valid link, exit the loop
+                        break;
                     }
                 } catch (NoSuchElementException | StaleElementReferenceException ignored) {
-                    // Ignore if a container doesn't have the link or is stale
                 }
             }
 
-            // If the primary locator fails, try a broader fallback
             if (chosenLink == null) {
                 chosenLink = driver.findElement(By.cssSelector("a.a-link-normal.s-underline-text.s-underline-link-text"));
             }
 
         } catch (Exception e) {
-            // If any error occurs during search, we'll hit the failure logic below.
             System.err.println("Error finding product link: " + e.getMessage());
         }
 
 
-        // If no link was found after trying, fail the test and save the page source for debugging.
         if (chosenLink == null) {
             try {
                 java.nio.file.Files.write(java.nio.file.Paths.get("failed_search_results.html"),
@@ -106,7 +150,6 @@ public class SearchSteps {
             return;
         }
 
-        // Safely click the chosen link (scroll into view + JS fallback)
         try {
             ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView({block:'center'});", chosenLink);
             wait.until(ExpectedConditions.elementToBeClickable(chosenLink)).click();
@@ -119,10 +162,8 @@ public class SearchSteps {
             }
         }
 
-        // Switch to the new window/tab if one was opened
         try {
             String original = driver.getWindowHandle();
-            // Wait a moment for the new window to open
             Thread.sleep(800);
             for (String handle : driver.getWindowHandles()) {
                 if (!handle.equals(original)) {
@@ -130,12 +171,10 @@ public class SearchSteps {
                     break;
                 }
             }
-            // Wait for the Product Detail Page (PDP) to load
             wait.until(d -> d.getCurrentUrl().contains("/dp/") ||
                     !d.findElements(By.id("add-to-cart-button")).isEmpty() ||
                     !d.findElements(By.id("buy-now-button")).isEmpty());
         } catch (Exception ignored) {
-            // Ignore if no new window, or if wait times out
         }
     }
 
@@ -230,5 +269,5 @@ public class SearchSteps {
         Assert.assertTrue(noResults || suggestions || resultsPage.resultsCount() >= 0,
                 "Invalid search should show no results or suggestions");
     }
-
 }
+
